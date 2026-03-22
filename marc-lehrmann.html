@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Marc Lehrmann — Strategic Partnerships & Enterprise Sales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600;700;800&family=Open+Sans:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #2C3E50;
+  --navy-dark: #1E2C3A;
+  --navy-light: #34495E;
+  --accent: #FFFFFF;
+  --white: #FFFFFF;
+  --off-white: #F5F5F3;
+  --text: #2D2D2D;
+  --muted: #666666;
+  --light-border: #E0DDD8;
+  --sidebar-text: rgba(255,255,255,0.85);
+  --sidebar-muted: rgba(255,255,255,0.5);
+  --sidebar-border: rgba(255,255,255,0.12);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--off-white);
+  color: var(--text);
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  background: var(--navy-dark);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 56px;
+  border-bottom: 2px solid rgba(255,255,255,0.15);
+}
+.nav-logo { font-family:'Raleway',sans-serif; font-weight:800; font-size:16px; color:#fff; text-decoration:none; letter-spacing:0.02em; }
+.nav-logo span { color: var(--accent); }
+.nav-links { display:flex; gap:28px; list-style:none; }
+.nav-links a { color:var(--sidebar-muted); text-decoration:none; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; font-family:'Raleway',sans-serif; font-weight:600; transition:color 0.2s; }
+.nav-links a:hover { color:#fff; }
+.nav-cta { background:var(--accent); color:#000; font-family:'Raleway',sans-serif; font-weight:700; font-size:12px; letter-spacing:0.06em; padding:8px 18px; text-decoration:none; text-transform:uppercase; transition:opacity 0.2s; }
+.nav-cta:hover { opacity:0.85; }
+
+/* PAGE */
+.page { max-width:1100px; margin:56px auto 0; display:grid; grid-template-columns:280px 1fr; min-height:calc(100vh - 56px); box-shadow:0 0 60px rgba(0,0,0,0.18); }
+
+/* SIDEBAR */
+.sidebar { background:var(--navy); color:var(--sidebar-text); padding:48px 28px; position:sticky; top:56px; height:calc(100vh - 56px); overflow-y:auto; scrollbar-width:none; }
+.sidebar::-webkit-scrollbar { display:none; }
+
+.photo-wrap { display:flex; justify-content:center; margin-bottom:28px; }
+.photo-circle { width:140px; height:140px; border-radius:50%; border:4px solid rgba(255,255,255,0.2); overflow:hidden; background:var(--navy-light); display:flex; align-items:center; justify-content:center; }
+.photo-circle img { width:100%; height:100%; object-fit:cover; display:block; }
+.photo-placeholder-inner { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--sidebar-muted); font-size:10px; text-align:center; padding:12px; }
+.photo-placeholder-inner svg { opacity:0.4; }
+
+.sidebar-identity { text-align:center; margin-bottom:24px; }
+.sidebar-identity .si-name { font-family:'Raleway',sans-serif; font-weight:800; font-size:17px; color:#fff; letter-spacing:-0.01em; }
+.sidebar-identity .si-title { font-size:11px; color:var(--sidebar-muted); margin-top:4px; letter-spacing:0.06em; text-transform:uppercase; line-height:1.5; }
+
+.status-badge { display:inline-flex; align-items:center; gap:7px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); padding:6px 12px; font-size:11px; color:#fff; font-family:'Raleway',sans-serif; font-weight:600; letter-spacing:0.05em; margin-bottom:24px; width:100%; justify-content:center; }
+.status-dot { width:6px; height:6px; background:var(--accent); border-radius:50%; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(0.6);} }
+
+.sb-section { margin-bottom:28px; padding-bottom:28px; border-bottom:1px solid var(--sidebar-border); }
+.sb-section:last-child { border-bottom:none; margin-bottom:0; }
+.sb-heading { font-family:'Raleway',sans-serif; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:0.1em; color:#fff; margin-bottom:16px; padding-bottom:7px; border-bottom:2px solid rgba(255,255,255,0.3); display:inline-block; }
+
+.sb-item { margin-bottom:14px; }
+.sb-item-label { font-family:'Raleway',sans-serif; font-weight:700; font-size:12px; color:#fff; margin-bottom:2px; }
+.sb-item-value { font-size:12px; color:var(--sidebar-text); line-height:1.5; }
+.sb-item-value a { color:var(--accent); text-decoration:none; }
+.sb-item-value a:hover { text-decoration:underline; }
+
+.stat-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.stat-box { background:rgba(255,255,255,0.05); border:1px solid var(--sidebar-border); padding:12px 8px; text-align:center; }
+.stat-num { font-family:'Raleway',sans-serif; font-weight:800; font-size:20px; color:#fff; line-height:1; margin-bottom:4px; }
+.stat-label { font-size:10px; color:var(--sidebar-muted); text-transform:uppercase; letter-spacing:0.06em; line-height:1.3; }
+
+.edu-year { font-size:11px; color:var(--sidebar-muted); margin-bottom:3px; }
+.edu-degree { font-family:'Raleway',sans-serif; font-weight:700; font-size:13px; color:#fff; margin-bottom:3px; }
+.edu-school { font-size:12px; color:var(--sidebar-text); }
+
+.skills-list { list-style:none; }
+.skills-list li { font-size:12px; color:var(--sidebar-text); padding:5px 0; border-bottom:1px solid var(--sidebar-border); display:flex; align-items:center; gap:8px; }
+.skills-list li::before { content:''; width:5px; height:5px; background:rgba(255,255,255,0.5); border-radius:50%; flex-shrink:0; }
+
+.sb-cta { display:block; background:var(--accent); color:#000; font-family:'Raleway',sans-serif; font-weight:800; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; padding:13px 20px; text-align:center; text-decoration:none; transition:opacity 0.2s; margin-top:8px; }
+.sb-cta:hover { opacity:0.85; }
+
+/* MAIN */
+.main { background:#fff; }
+
+.hero-banner { padding:48px 48px 36px; border-bottom:1px solid var(--light-border); }
+.hero-name-row { line-height:1; margin-bottom:6px; }
+.hero-first { font-family:'Raleway',sans-serif; font-weight:800; font-size:clamp(44px,5.5vw,68px); letter-spacing:-0.02em; color:var(--text); }
+.hero-last { font-family:'Raleway',sans-serif; font-weight:300; font-size:clamp(44px,5.5vw,68px); letter-spacing:-0.02em; color:var(--text); }
+.hero-title-line { font-family:'Raleway',sans-serif; font-weight:600; font-size:12px; color:var(--navy); letter-spacing:0.12em; text-transform:uppercase; margin:10px 0 18px; display:flex; align-items:center; gap:12px; }
+.hero-title-line::after { content:''; flex:1; height:1px; background:var(--light-border); max-width:160px; }
+.hero-summary { font-size:13px; line-height:1.75; color:var(--muted); max-width:640px; }
+.hero-summary strong { color:var(--text); font-weight:600; }
+
+.content-section { padding:40px 48px; border-bottom:1px solid var(--light-border); }
+.content-section:last-child { border-bottom:none; }
+.section-title { font-family:'Raleway',sans-serif; font-weight:800; font-size:20px; color:var(--navy); margin-bottom:28px; padding-bottom:10px; border-bottom:2px solid var(--navy); }
+
+/* NARRATIVE */
+.narrative-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.nar-card { border:1px solid var(--light-border); padding:24px; position:relative; overflow:hidden; }
+.nar-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background:var(--navy); }
+.nar-card:nth-child(2)::before { background:var(--accent); }
+.nar-card:nth-child(3)::before { background:var(--navy-light); }
+.nar-card.full { grid-column:1/-1; }
+.nar-num { font-family:'Raleway',sans-serif; font-weight:800; font-size:26px; color:rgba(44,62,80,0.07); line-height:1; margin-bottom:6px; }
+.nar-label { font-family:'Raleway',sans-serif; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--navy); margin-bottom:8px; }
+.nar-text { font-size:12.5px; color:var(--muted); line-height:1.65; }
+
+/* TIMELINE */
+.timeline { position:relative; }
+.tl-item { display:grid; grid-template-columns:140px 1fr; margin-bottom:0; position:relative; opacity:0; transform:translateY(16px); transition:opacity 0.5s ease, transform 0.5s ease; }
+.tl-item.visible { opacity:1; transform:translateY(0); }
+.tl-left { padding-right:28px; padding-bottom:36px; text-align:right; position:relative; }
+.tl-left::after { content:''; position:absolute; right:-1px; top:6px; bottom:0; width:1px; background:var(--light-border); }
+.tl-item:last-child .tl-left::after { display:none; }
+.tl-item:last-child .tl-right { padding-bottom:0; }
+.tl-date { font-family:'Raleway',sans-serif; font-weight:700; font-size:11px; color:var(--navy); letter-spacing:0.04em; margin-bottom:4px; }
+.tl-company { font-size:11px; color:var(--muted); font-style:italic; line-height:1.4; }
+.tl-right { padding-left:28px; padding-bottom:36px; position:relative; }
+.tl-right::before { content:''; position:absolute; left:-5px; top:5px; width:10px; height:10px; border-radius:50%; background:var(--navy); border:2px solid #fff; box-shadow:0 0 0 2px var(--navy); z-index:1; }
+.tl-role { font-family:'Raleway',sans-serif; font-weight:800; font-size:16px; color:var(--navy); margin-bottom:10px; }
+.tl-bullets { list-style:none; }
+.tl-bullets li { font-size:12.5px; color:var(--text); line-height:1.65; padding:3px 0 3px 16px; position:relative; }
+.tl-bullets li::before { content:'•'; position:absolute; left:0; color:var(--navy); font-weight:700; }
+
+/* SKILLS */
+.skills-main-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.skill-card { border:1px solid var(--light-border); padding:20px; transition:border-color 0.2s, box-shadow 0.2s; }
+.skill-card:hover { border-color:var(--navy); box-shadow:0 2px 12px rgba(44,62,80,0.08); }
+.skill-card-title { font-family:'Raleway',sans-serif; font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--navy); margin-bottom:12px; padding-bottom:7px; border-bottom:1px solid var(--light-border); }
+.skill-card-items { list-style:none; }
+.skill-card-items li { font-size:11.5px; color:var(--muted); padding:3px 0; border-bottom:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:7px; }
+.skill-card-items li::before { content:''; width:4px; height:4px; background:var(--navy); border-radius:50%; flex-shrink:0; }
+
+/* CONTACT */
+.contact-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:start; }
+.contact-links-list { display:flex; flex-direction:column; }
+.contact-row { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--light-border); text-decoration:none; color:var(--text); transition:padding-left 0.2s; }
+.contact-row:hover { padding-left:6px; }
+.contact-row:first-child { border-top:1px solid var(--light-border); }
+.cr-label { font-family:'Raleway',sans-serif; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--navy); min-width:72px; }
+.cr-value { font-size:13px; color:var(--muted); }
+.cr-arrow { margin-left:auto; color:var(--navy); }
+
+.calendly-panel { border:2px solid var(--navy); padding:32px; text-align:center; }
+.cal-eyebrow { font-family:'Raleway',sans-serif; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.14em; color:var(--muted); margin-bottom:10px; }
+.cal-heading { font-family:'Raleway',sans-serif; font-weight:800; font-size:20px; color:var(--navy); margin-bottom:10px; }
+.cal-body { font-size:12.5px; color:var(--muted); line-height:1.6; margin-bottom:24px; }
+.btn-cal { display:block; background:var(--navy); color:#fff; font-family:'Raleway',sans-serif; font-weight:700; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; padding:14px 24px; text-decoration:none; transition:background 0.2s; margin-bottom:10px; }
+.btn-cal:hover { background:var(--navy-light); }
+.cal-note { font-size:11px; color:var(--muted); }
+
+/* FOOTER */
+footer { background:var(--navy-dark); color:var(--sidebar-muted); text-align:center; padding:20px 40px; font-size:11px; letter-spacing:0.05em; grid-column:1/-1; }
+footer span { color:rgba(255,255,255,0.7); }
+
+/* RESPONSIVE */
+@media(max-width:860px){
+  nav { padding:0 20px; }
+  .nav-links { display:none; }
+  .page { grid-template-columns:1fr; }
+  .sidebar { position:static; height:auto; padding:32px 24px; }
+  .hero-banner, .content-section { padding:32px 24px; }
+  .tl-item { grid-template-columns:100px 1fr; }
+  .narrative-grid { grid-template-columns:1fr; }
+  .skills-main-grid { grid-template-columns:1fr 1fr; }
+  .contact-grid { grid-template-columns:1fr; }
+  footer { grid-column:1; }
+}
+@media(max-width:560px){
+  .skills-main-grid { grid-template-columns:1fr; }
+  .tl-item { grid-template-columns:1fr; }
+  .tl-left { text-align:left; padding-right:0; padding-bottom:6px; }
+  .tl-left::after { display:none; }
+  .tl-right { padding-left:16px; }
+  .tl-right::before { display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">Marc Lehrmann<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Book a Call</a>
+</nav>
+
+<div class="page">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="photo-wrap">
+      <div class="photo-circle">
+        <!-- TO UPDATE: uncomment img tag below and set src to your headshot file -->
+        <!-- <img src="headshot.jpg" alt="Marc Lehrmann" /> -->
+        <div class="photo-placeholder-inner">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          <span>Add photo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-identity">
+      <div class="si-name">Marc Lehrmann</div>
+      <div class="si-title">Strategic Partnerships<br/>Enterprise Sales</div>
+    </div>
+
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      Open to New Roles
+    </div>
+
+    <!-- Contact -->
+    <div class="sb-section">
+      <div class="sb-heading">Contact</div>
+      <div class="sb-item">
+        <div class="sb-item-label">Phone</div>
+        <!-- TO UPDATE: your phone number -->
+        <div class="sb-item-value">909-573-5840</div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-item-label">Email</div>
+        <!-- TO UPDATE: your email -->
+        <div class="sb-item-value"><a href="/cdn-cgi/l/email-protection#4924252c213b797978092e24282025672a2624"><span class="__cf_email__" data-cfemail="c9a4a5aca1bbf9f9f889aea4a8a0a5e7aaa6a4">[email&#160;protected]</span></a></div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-item-label">LinkedIn</div>
+        <!-- TO UPDATE: your LinkedIn URL -->
+        <div class="sb-item-value"><a href="https://linkedin.com/in/marclehrmann" target="_blank">linkedin.com/in/marclehrmann</a></div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-item-label">GitHub</div>
+        <div class="sb-item-value"><a href="https://github.com/mlehr001" target="_blank">github.com/mlehr001</a></div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-item-label">Location</div>
+        <div class="sb-item-value">Southern California<br/>Open to Remote &amp; Hybrid</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="sb-section">
+      <div class="sb-heading">By the Numbers</div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num">$25M+</div>
+          <div class="stat-label">Career Revenue</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">10+</div>
+          <div class="stat-label">Yrs Enterprise</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">7</div>
+          <div class="stat-label">Apps Built</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">3</div>
+          <div class="stat-label">Industries</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Education -->
+    <div class="sb-section">
+      <div class="sb-heading">Education</div>
+      <div class="edu-year">2012</div>
+      <div class="edu-degree">Bachelor of Arts: Economics</div>
+      <div class="edu-school">University of California, Riverside</div>
+    </div>
+
+    <!-- Skills -->
+    <div class="sb-section">
+      <div class="sb-heading">Skills</div>
+      <ul class="skills-list">
+        <!-- TO UPDATE: add/remove skills as needed -->
+        <li>New Business Development</li>
+        <li>Strategic Partnerships</li>
+        <li>Enterprise Sales Motion</li>
+        <li>Channel &amp; Distributor Programs</li>
+        <li>CRM Management</li>
+        <li>Negotiation &amp; Deal Structuring</li>
+        <li>Solution Selling</li>
+        <li>Team Building &amp; Leadership</li>
+        <li>AI Platform Fluency</li>
+        <li>Product Development</li>
+        <li>Data Analysis / Excel</li>
+        <li>Microsoft Office Suite</li>
+      </ul>
+    </div>
+
+    <!-- Book call -->
+    <div class="sb-section">
+      <div class="sb-heading">Let's Connect</div>
+      <!-- TO UPDATE: replace with your Calendly link -->
+      <a href="https://calendly.com/yourlink" target="_blank" class="sb-cta">Book a 30-Min Call →</a>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero-banner">
+      <div class="hero-name-row">
+        <span class="hero-first">Marc </span><span class="hero-last">Lehrmann</span>
+      </div>
+      <div class="hero-title-line">Strategic Partnerships &nbsp;·&nbsp; Business Development &nbsp;·&nbsp; Enterprise Sales</div>
+      <p class="hero-summary">
+        A seasoned enterprise sales leader with a demonstrated track record of driving revenue growth across <strong>industrial software, storage technology, and embedded systems</strong>. I specialize in complex multi-stakeholder deals, long-cycle relationship management, and channel partner development — now <strong>bridging operational technology and AI</strong>, bringing operator-level credibility to the next generation of data infrastructure.
+      </p>
+    </div>
+
+    <!-- About -->
+    <div class="content-section" id="about">
+      <h2 class="section-title">The OT-to-AI Bridge</h2>
+      <div class="narrative-grid">
+        <div class="nar-card">
+          <div class="nar-num">01</div>
+          <div class="nar-label">Where I've Been</div>
+          <div class="nar-text">Spent 10+ years selling to the physical world — SCADA, HMI, PI System, and industrial IoT to energy, water, and manufacturing enterprises. Deals where a wrong move resets a 9-month relationship. Built $25M+ in career revenue doing exactly that.</div>
+        </div>
+        <div class="nar-card">
+          <div class="nar-num">02</div>
+          <div class="nar-label">What I Know</div>
+          <div class="nar-text">How enterprise decisions actually get made. How to navigate procurement, earn multi-stakeholder trust, and close in environments where urgency doesn't exist until you create it. Plus 7 apps in active development — I speak product as fluently as pipeline.</div>
+        </div>
+        <div class="nar-card full">
+          <div class="nar-num">03</div>
+          <div class="nar-label">Where I'm Going</div>
+          <div class="nar-text">AI platforms. Data infrastructure. Cloud. AdTech. Entertainment tech. Companies that need a strategic seller who can walk into an industrial enterprise, speak their language, and close the deal nobody else could. The OT sector is AI's next major acquisition — I'm the person who can open that door.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="content-section" id="experience">
+      <h2 class="section-title">Experience</h2>
+      <div class="timeline">
+
+        <div class="tl-item">
+          <div class="tl-left">
+            <!-- TO UPDATE: adjust dates/company as your career evolves -->
+            <div class="tl-date">2018 – Present</div>
+            <div class="tl-company">AVEVA Select CA<br/>Irvine, CA</div>
+          </div>
+          <div class="tl-right">
+            <div class="tl-role">Assistant Sales Manager</div>
+            <ul class="tl-bullets">
+              <li>Sole California distributor for AVEVA's full industrial software suite — SCADA, HMI, PI System, and IIoT — managing enterprise and municipal accounts across energy, water, and manufacturing verticals.</li>
+              <li>Navigated complex multi-stakeholder procurement cycles, building trust at the executive, operations, and IT levels simultaneously to close long-cycle deals.</li>
+              <li>Drove consistent revenue growth through solution-based selling, customer success management, and strategic upsell into existing accounts.</li>
+              <li>Developed deep technical fluency across AVEVA's portfolio to deliver credible, value-led presentations to both OT engineers and C-suite buyers.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-left">
+            <div class="tl-date">2020 – 2021</div>
+            <div class="tl-company">Dexxxon Digital Storage<br/>Lewis Center, OH (Remote)</div>
+          </div>
+          <div class="tl-right">
+            <div class="tl-role">Key Account Manager</div>
+            <ul class="tl-bullets">
+              <li>Managed and expanded key accounts for consumer flash memory brands (EMTEC, Kodak, Phillips) and LTO-Tape digital storage brands (IBM, Quantum, HP), driving substantial revenue growth and enduring client relationships.</li>
+              <li>Spearheaded strategic initiatives to unlock account potential, surpass sales targets, and amplify market presence through disciplined account planning.</li>
+              <li>Leveraged negotiation skills to deliver compelling proposals, engage stakeholders, and consistently close deals that fostered long-term partnerships.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-left">
+            <div class="tl-date">2014 – 2020</div>
+            <div class="tl-company">Transcend Information<br/>Orange, CA</div>
+          </div>
+          <div class="tl-right">
+            <div class="tl-role">Channel Account Manager</div>
+            <ul class="tl-bullets">
+              <li>Spearheaded strategic partnerships with Ingram Micro and Synnex Corporation, growing annual revenue to $3 million through disciplined channel development.</li>
+              <li>Achieved 30% year-over-year revenue increase by identifying market entry opportunities and executing effective co-marketing programs with key distributors.</li>
+              <li>Drove 100% YoY sales growth for Apple embedded solutions and military-grade body cameras, managing the full sales cycle from partner training to close.</li>
+              <li>Collaborated with vendor and partnership managers to develop sales campaigns across a network of 200+ resellers and channel partners nationwide.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="content-section" id="skills">
+      <h2 class="section-title">Core Capabilities</h2>
+      <div class="skills-main-grid">
+        <!-- TO UPDATE: add/remove/rename skill cards as needed -->
+        <div class="skill-card">
+          <div class="skill-card-title">Enterprise Sales</div>
+          <ul class="skill-card-items">
+            <li>Multi-stakeholder deal management</li>
+            <li>Long-cycle relationship mgmt</li>
+            <li>Executive-level engagement</li>
+            <li>Procurement navigation</li>
+            <li>Territory ownership</li>
+          </ul>
+        </div>
+        <div class="skill-card">
+          <div class="skill-card-title">Strategic Partnerships</div>
+          <ul class="skill-card-items">
+            <li>Channel &amp; distributor programs</li>
+            <li>Partner ecosystem development</li>
+            <li>Co-sell motion design</li>
+            <li>Revenue share structuring</li>
+            <li>SI &amp; ISV relationships</li>
+          </ul>
+        </div>
+        <div class="skill-card">
+          <div class="skill-card-title">OT / Industrial Domain</div>
+          <ul class="skill-card-items">
+            <li>SCADA &amp; HMI platforms</li>
+            <li>PI System / OSIsoft</li>
+            <li>Industrial IoT</li>
+            <li>AVEVA portfolio</li>
+            <li>Energy, water, manufacturing</li>
+          </ul>
+        </div>
+        <div class="skill-card">
+          <div class="skill-card-title">AI &amp; Data Literacy</div>
+          <ul class="skill-card-items">
+            <li>LLM platforms (Claude, GPT-4)</li>
+            <li>Data pipeline concepts</li>
+            <li>Supabase / pgvector</li>
+            <li>Next.js / React / TypeScript</li>
+            <li>7 apps in active development</li>
+          </ul>
+        </div>
+        <div class="skill-card">
+          <div class="skill-card-title">Business Development</div>
+          <ul class="skill-card-items">
+            <li>Pipeline generation</li>
+            <li>Outbound motion design</li>
+            <li>Competitive positioning</li>
+            <li>Deal structuring &amp; negotiation</li>
+            <li>Forecasting &amp; CRM</li>
+          </ul>
+        </div>
+        <div class="skill-card">
+          <div class="skill-card-title">Builder Mindset</div>
+          <ul class="skill-card-items">
+            <li>7 apps in active development</li>
+            <li>Product thinking &amp; roadmapping</li>
+            <li>AI-native workflow design</li>
+            <li>Rapid prototyping</li>
+            <li>Execution under ambiguity</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="content-section" id="contact">
+      <h2 class="section-title">Get in Touch</h2>
+      <div class="contact-grid">
+        <div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:20px;">
+            If you're building something in AI, data infrastructure, cloud, or enterprise tech and need a strategic seller who can open doors in industrial markets — let's find 30 minutes.
+          </p>
+          <div class="contact-links-list">
+            <a href="tel:9095735840" class="contact-row">
+              <span class="cr-label">Phone</span>
+              <span class="cr-value">909-573-5840</span>
+              <span class="cr-arrow">↗</span>
+            </a>
+            <a href="/cdn-cgi/l/email-protection#6e03020b061c5e5e5f2e09030f0702400d0103" class="contact-row">
+              <span class="cr-label">Email</span>
+              <span class="cr-value"><span class="__cf_email__" data-cfemail="e58889808d97d5d5d4a58288848c89cb868a88">[email&#160;protected]</span></span>
+              <span class="cr-arrow">↗</span>
+            </a>
+            <a href="https://linkedin.com/in/marclehrmann" target="_blank" class="contact-row">
+              <span class="cr-label">LinkedIn</span>
+              <span class="cr-value">linkedin.com/in/marclehrmann</span>
+              <span class="cr-arrow">↗</span>
+            </a>
+            <a href="https://github.com/mlehr001" target="_blank" class="contact-row">
+              <span class="cr-label">GitHub</span>
+              <span class="cr-value">github.com/mlehr001</span>
+              <span class="cr-arrow">↗</span>
+            </a>
+          </div>
+        </div>
+        <div class="calendly-panel">
+          <div class="cal-eyebrow">Schedule a Meeting</div>
+          <div class="cal-heading">30-Minute Intro Call</div>
+          <div class="cal-body">No pitch, no pressure. Let's see if there's a fit. Pick a time that works and I'll be there.</div>
+          <!-- TO UPDATE: replace with your Calendly link -->
+          <a href="https://calendly.com/yourlink" target="_blank" class="btn-cal">Book on Calendly →</a>
+          <div class="cal-note">Usually responds within 24 hours</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    Marc Lehrmann &nbsp;·&nbsp; Southern California &nbsp;·&nbsp; Open to Remote &amp; Hybrid &nbsp;·&nbsp; <span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d8b5b4bdb0aae8e8e998bfb5b9b1b4f6bbb7b5">[email&#160;protected]</a></span>
+  </footer>
+
+</div>
+
+<s
