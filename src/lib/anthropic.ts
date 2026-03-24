@@ -7,7 +7,7 @@ export const anthropic = new Anthropic({
 });
 
 // Primary model for all ResumAI features
-export const MODEL = "claude-sonnet-4-20250514";
+export const MODEL = "claude-sonnet-4-6";
 
 // ─── SHARED PROMPT BUILDERS ───────────────────────────────────────────────────
 export function buildRewritePrompt(

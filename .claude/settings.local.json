@@ -11,7 +11,11 @@
       "Bash(# Copy the src directory contents\ncp -r C:/Users/mlehr/Projects/resumai-scaffold/src/. C:/Users/mlehr/Projects/ResumAI/src/\n# Copy public dir\ncp -r C:/Users/mlehr/Projects/resumai-scaffold/public/. C:/Users/mlehr/Projects/ResumAI/public/\necho \"src and public copied\")",
       "Bash(# Copy node_modules from scaffold \\(faster than re-installing\\)\ncp -r C:/Users/mlehr/Projects/resumai-scaffold/node_modules C:/Users/mlehr/Projects/ResumAI/node_modules && echo \"node_modules copied\")",
       "Bash(npm install:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep -r createFunction node_modules/inngest/dist/*.d.ts)",
+      "Bash(grep -rn createFunction node_modules/inngest/*.d.ts)",
+      "Bash(npm run:*)",
+      "Bash(curl:*)"
     ]
   }
 }
