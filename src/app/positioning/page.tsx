@@ -169,11 +169,17 @@ export default function PositioningPage() {
         body: JSON.stringify({ section, targetRole, analytics, scoreData: section.scoreData }),
       });
       const data = await res.json();
-      const text = data.text || (data.error ? `Error: ${data.error}` : "No response.");
+      if (!res.ok) {
+        throw new Error(data.error || `API error ${res.status}`);
+      }
+      const text = data.text ?? data.rewrite ?? "";
+      if (!text) {
+        throw new Error("Claude returned an empty rewrite. Try again.");
+      }
       setRewrites(r => ({ ...r, [section.id]: text }));
       setExpanded(e => ({ ...e, [section.id]: true }));
-    } catch {
-      setRewrites(r => ({ ...r, [section.id]: "Error reaching API. Check your connection." }));
+    } catch (err) {
+      setRewrites(r => ({ ...r, [section.id]: `Error: ${err instanceof Error ? err.message : String(err)}` }));
     }
     setLoading(l => ({ ...l, [section.id]: false }));
   }

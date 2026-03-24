@@ -55,8 +55,26 @@ export async function POST(req: NextRequest) {
       }],
     });
 
-    const text = message.content.find((b) => b.type === "text")?.text ?? "";
-    return NextResponse.json({ rewrite: text });
+    const textResponse = message.content
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { type: "text"; text: string }).text)
+      .join("")
+      .trim();
+
+    if (!textResponse) {
+      console.error("[api/rewrite] empty response from Claude", {
+        model: MODEL,
+        stopReason: message.stop_reason,
+        contentBlocks: message.content.length,
+        usage: message.usage,
+      });
+      return NextResponse.json(
+        { error: "Claude returned an empty response", debug: { stopReason: message.stop_reason, contentBlocks: message.content.length } },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json({ text: textResponse });
 
   } catch (err: unknown) {
     console.error("[api/rewrite] full error", err);

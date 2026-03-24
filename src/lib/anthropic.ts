@@ -1,13 +1,16 @@
+import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 
-// Server-only — import exclusively in API route handlers and server functions.
-// Never import from Client Components.
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error("Missing ANTHROPIC_API_KEY environment variable");
+}
+
 export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 // Primary model for all ResumAI features
-export const MODEL = "claude-sonnet-4-6";
+export const MODEL = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6";
 
 // ─── SHARED PROMPT BUILDERS ───────────────────────────────────────────────────
 export function buildRewritePrompt(
