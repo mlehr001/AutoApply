@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import { NAV_ITEMS, COLORS, NAV_HEIGHT } from "@/lib/constants";
 
+// Routes that have their own full-page nav / should not show the app nav
+const NAVLESS = ["/proof", "/sign-in", "/sign-up"];
+
 export default function Nav() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
 
-  // Don't render nav on the public landing page
-  if (pathname === "/") return null;
+  if (NAVLESS.some(p => pathname.startsWith(p))) return null;
 
   return (
     <nav
@@ -29,9 +31,9 @@ export default function Nav() {
       }}
     >
       {/* Left — wordmark + nav links */}
-      <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
         <Link
-          href="/dashboard"
+          href="/"
           style={{
             fontFamily:     "var(--font-raleway), sans-serif",
             fontWeight:     800,
@@ -48,13 +50,16 @@ export default function Nav() {
         {isSignedIn && (
           <div style={{ display: "flex", gap: 2 }}>
             {NAV_ITEMS.map((item) => {
-              const active = pathname.startsWith(item.href);
+              const active =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   style={{
-                    padding:        "6px 14px",
+                    padding:        "6px 12px",
                     fontSize:       11,
                     fontFamily:     "var(--font-raleway), sans-serif",
                     fontWeight:     700,
@@ -65,11 +70,11 @@ export default function Nav() {
                     borderBottom:   active
                       ? "2px solid #fff"
                       : "2px solid transparent",
-                    transition:     "color 0.15s, border-color 0.15s",
                     lineHeight:     `${NAV_HEIGHT - 2}px`,
+                    transition:     "color 0.15s, border-color 0.15s",
                   }}
                 >
-                  {item.icon} {item.label}
+                  {item.label}
                 </Link>
               );
             })}
@@ -77,16 +82,32 @@ export default function Nav() {
         )}
       </div>
 
-      {/* Right — user button */}
-      {isSignedIn && (
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: { width: 30, height: 30 },
-            },
-          }}
-        />
-      )}
+      {/* Right */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {!isSignedIn && (
+          <Link
+            href="/sign-in"
+            style={{
+              fontSize:       11,
+              fontFamily:     "var(--font-raleway), sans-serif",
+              fontWeight:     700,
+              letterSpacing:  "0.07em",
+              textTransform:  "uppercase",
+              color:          "rgba(255,255,255,0.55)",
+              textDecoration: "none",
+            }}
+          >
+            Sign In
+          </Link>
+        )}
+        {isSignedIn && (
+          <UserButton
+            appearance={{
+              elements: { avatarBox: { width: 30, height: 30 } },
+            }}
+          />
+        )}
+      </div>
     </nav>
   );
 }
