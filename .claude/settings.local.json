@@ -15,7 +15,8 @@
       "Bash(grep -r createFunction node_modules/inngest/dist/*.d.ts)",
       "Bash(grep -rn createFunction node_modules/inngest/*.d.ts)",
       "Bash(npm run:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git fetch:*)"
     ]
   }
 }

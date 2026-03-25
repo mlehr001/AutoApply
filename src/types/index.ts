@@ -87,3 +87,29 @@ export interface NavItem {
   href: string;
   icon: string;
 }
+
+export interface RoleRecommendation {
+  id: string;
+  title: string;
+  company?: string | null;
+  context: string;
+  reasoning: string;
+  confidence: number;
+  traits: string[];
+}
+
+export interface RewriteTargetRole {
+  id?: string;
+  title: string;
+  company?: string | null;
+  context: string;
+  reasoning: string;
+  traits: string[];
+}
+
+export interface RewriteRequest {
+  section: ResumeSection;
+  targetRole: RewriteTargetRole;
+  analytics?: unknown;
+  scoreData?: unknown;
+}

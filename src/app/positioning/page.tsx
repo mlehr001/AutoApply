@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getActiveResume, saveResumeVersion, updateResumeVersion } from "@/lib/supabase";
 import { track } from "@/lib/posthog";
-import type { ResumeVersion, ResumeSection } from "@/types";
+import type { ResumeSection, RoleRecommendation, RewriteTargetRole } from "@/types";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const navy = "#2C3E50", offWhite = "#F5F5F3", white = "#FFFFFF",
@@ -135,7 +135,11 @@ const DiffView = ({ original, rewritten }: { original: string; rewritten: string
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function PositioningPage() {
-  const [targetRole,  setTargetRole]  = useState("");
+  const analyzedRef = useRef(false);
+
+  const [roleRecommendations, setRoleRecommendations] = useState<RoleRecommendation[]>([]);
+  const [selectedRole,        setSelectedRole]        = useState<RewriteTargetRole | null>(null);
+  const [isAnalyzingRoles,    setIsAnalyzingRoles]    = useState(false);
   const [resume,      setResume]      = useState<{ sections: ResumeSection[]; id?: string }>({ sections: BASE_SECTIONS });
   const [analytics]                   = useState(SAMPLE_ANALYTICS);
   const [rewrites,    setRewrites]    = useState<Record<string, string>>({});
@@ -146,11 +150,41 @@ export default function PositioningPage() {
   const [ran,         setRan]         = useState(false);
   const [dbLoading,   setDbLoading]   = useState(true);
 
-  // Load active resume version from Supabase
+  async function analyzeRoles(sections: ResumeSection[]) {
+    setIsAnalyzingRoles(true);
+    try {
+      const res = await fetch("/api/analyze_roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume: { sections } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to analyze roles");
+      const recs: RoleRecommendation[] = data.recommendations ?? [];
+      setRoleRecommendations(recs);
+      if (recs.length > 0) {
+        const first = recs[0];
+        setSelectedRole({ id: first.id, title: first.title, company: first.company, context: first.context, reasoning: first.reasoning, traits: first.traits });
+      }
+    } catch {
+      // non-blocking
+    } finally {
+      setIsAnalyzingRoles(false);
+    }
+  }
+
+  // Load active resume version from Supabase, then trigger role analysis
   useEffect(() => {
+    if (analyzedRef.current) return;
+    analyzedRef.current = true;
+
     getActiveResume().then(v => {
+      const sections = v ? v.sections : BASE_SECTIONS;
       if (v) setResume({ sections: v.sections, id: v.id });
-    }).catch(() => {}).finally(() => setDbLoading(false));
+      analyzeRoles(sections);
+    }).catch(() => {
+      analyzeRoles(BASE_SECTIONS);
+    }).finally(() => setDbLoading(false));
   }, []);
 
   const scores = resume.sections.map(s => ({ ...s, scoreData: scoreSection(s, analytics) }));
@@ -159,14 +193,14 @@ export default function PositioningPage() {
   const needsRewrite = scores.filter(s => s.scoreData.grade === "C" || s.scoreData.grade === "D");
 
   async function rewriteSection(section: ResumeSection & { scoreData: SectionScore }) {
-    if (!targetRole.trim()) return;
+    if (!selectedRole) return;
     setLoading(l => ({ ...l, [section.id]: true }));
-    track.rewriteRan(section.title, targetRole);
+    track.rewriteRan(section.title, selectedRole.title);
     try {
       const res = await fetch("/api/rewrite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section, targetRole, analytics, scoreData: section.scoreData }),
+        body: JSON.stringify({ section, targetRole: selectedRole, analytics, scoreData: section.scoreData }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -185,7 +219,7 @@ export default function PositioningPage() {
   }
 
   async function rewriteAll() {
-    if (!targetRole.trim()) return;
+    if (!selectedRole) return;
     setOptimizing(true);
     setRan(true);
     for (const s of needsRewrite) await rewriteSection(s);
@@ -205,7 +239,7 @@ export default function PositioningPage() {
       if (resume.id) {
         await updateResumeVersion(resume.id, { sections: newSections });
       } else {
-        const saved = await saveResumeVersion({ version_name: `AI Rewrite — ${targetRole}`, sections: newSections, is_active: false });
+        const saved = await saveResumeVersion({ version_name: `AI Rewrite — ${selectedRole?.title ?? "Unknown Role"}`, sections: newSections, is_active: false });
         if (saved) setResume(r => ({ ...r, id: saved.id }));
       }
     } catch { /* non-blocking */ }
@@ -215,6 +249,10 @@ export default function PositioningPage() {
     track.rewriteRejected(sectionId);
     setRewrites(rw => { const n = { ...rw }; delete n[sectionId]; return n; });
     setExpanded(e => ({ ...e, [sectionId]: false }));
+  }
+
+  function selectRecommendation(rec: RoleRecommendation) {
+    setSelectedRole({ id: rec.id, title: rec.title, company: rec.company, context: rec.context, reasoning: rec.reasoning, traits: rec.traits });
   }
 
   if (dbLoading) {
@@ -240,7 +278,7 @@ export default function PositioningPage() {
           <div>
             <h1 style={{ fontFamily: "Georgia,serif", fontSize: 26, fontWeight: 700, color: navy, marginBottom: 6 }}>Living Resume Optimizer</h1>
             <p style={{ fontSize: 13, color: muted, lineHeight: 1.6, maxWidth: 560 }}>
-              Paste in your target role, review section scores based on real visitor behavior, then let AI aggressively rewrite anything underperforming.
+              Select a target role from AI recommendations, review section scores based on real visitor behavior, then let AI aggressively rewrite anything underperforming.
             </p>
           </div>
           <div style={{ background: white, border: `1px solid ${border}`, padding: "20px 24px", textAlign: "center", minWidth: 140 }}>
@@ -250,27 +288,91 @@ export default function PositioningPage() {
           </div>
         </div>
 
-        {/* TARGET ROLE INPUT */}
-        <div style={{ background: white, border: `1px solid ${border}`, padding: "24px 28px", marginBottom: 24, display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" as const }}>
+        {/* RECOMMENDED ROLES */}
+        <div style={{ background: white, border: `1px solid ${border}`, padding: "24px 28px", marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.09em", color: muted }}>
+              Recommended Target Roles
+            </div>
+            {isAnalyzingRoles && (
+              <div style={{ fontSize: 12, color: muted }}>Analyzing resume…</div>
+            )}
+          </div>
+
+          {isAnalyzingRoles && roleRecommendations.length === 0 ? (
+            <div style={{ padding: "32px", textAlign: "center", color: muted, fontSize: 13 }}>
+              <div style={{ fontSize: 22, marginBottom: 10 }}>⚡</div>
+              AI is analyzing your resume to find the best-fit roles…
+            </div>
+          ) : roleRecommendations.length === 0 ? (
+            <div style={{ fontSize: 13, color: muted }}>No recommendations yet.</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+              {roleRecommendations.map(rec => {
+                const isSelected = selectedRole?.id === rec.id;
+                const confColor  = rec.confidence >= 80 ? green : rec.confidence >= 60 ? amber : muted;
+                return (
+                  <div
+                    key={rec.id}
+                    onClick={() => selectRecommendation(rec)}
+                    style={{
+                      border: `2px solid ${isSelected ? navy : border}`,
+                      background: isSelected ? navy + "06" : white,
+                      padding: "16px 18px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                      <div style={{ fontFamily: "Georgia,serif", fontSize: 14, fontWeight: 700, color: navy, lineHeight: 1.3 }}>{rec.title}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: confColor, flexShrink: 0, paddingTop: 1 }}>{rec.confidence}%</div>
+                    </div>
+                    {rec.company && (
+                      <div style={{ fontSize: 12, color: muted, marginBottom: 4 }}>{rec.company}</div>
+                    )}
+                    <div style={{ fontSize: 12, color: muted, marginBottom: 10, lineHeight: 1.55 }}>{rec.context}</div>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" as const }}>
+                      {rec.traits.slice(0, 3).map(t => (
+                        <span key={t} style={{ fontSize: 10, padding: "2px 6px", background: navy + "10", color: navy, border: `1px solid ${navy}20` }}>{t}</span>
+                      ))}
+                    </div>
+                    {isSelected && (
+                      <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: navy, letterSpacing: "0.04em" }}>✓ Selected</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* CURRENT TARGET + REWRITE ALL */}
+        <div style={{ background: white, border: `1px solid ${border}`, padding: "24px 28px", marginBottom: 24, display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" as const }}>
           <div style={{ flex: 1, minWidth: 280 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: navy, marginBottom: 8 }}>Target Role</label>
-            <input
-              value={targetRole}
-              onChange={e => setTargetRole(e.target.value)}
-              placeholder="e.g. Director of Strategic Partnerships at Databricks"
-              style={{ width: "100%", padding: "11px 14px", border: `1px solid ${border}`, fontSize: 13, color: navy, outline: "none", fontFamily: "inherit", background: offWhite }}
-            />
-            <div style={{ fontSize: 11, color: muted, marginTop: 6 }}>Company + role title gives the AI better rewrite context.</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: navy, marginBottom: 10 }}>Current Target</div>
+            {selectedRole ? (
+              <div>
+                <div style={{ fontFamily: "Georgia,serif", fontSize: 17, fontWeight: 700, color: navy, marginBottom: 4 }}>
+                  {selectedRole.title}{selectedRole.company ? ` — ${selectedRole.company}` : ""}
+                </div>
+                <div style={{ fontSize: 12, color: muted, lineHeight: 1.6, marginBottom: 6 }}>{selectedRole.context}</div>
+                <div style={{ fontSize: 12, color: muted, lineHeight: 1.55, fontStyle: "italic" }}>{selectedRole.reasoning}</div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: muted }}>
+                {isAnalyzingRoles ? "Analyzing resume to recommend roles…" : "Select a role above to begin."}
+              </div>
+            )}
           </div>
           <button
             onClick={rewriteAll}
-            disabled={!targetRole.trim() || optimizing}
+            disabled={!selectedRole || optimizing}
             style={{
-              background: targetRole.trim() && !optimizing ? navy : border,
-              color: targetRole.trim() && !optimizing ? white : muted,
-              border: "none", cursor: targetRole.trim() && !optimizing ? "pointer" : "default",
+              background: selectedRole && !optimizing ? navy : border,
+              color: selectedRole && !optimizing ? white : muted,
+              border: "none", cursor: selectedRole && !optimizing ? "pointer" : "default",
               padding: "12px 24px", fontFamily: "inherit", fontWeight: 700, fontSize: 13,
               letterSpacing: "0.05em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const,
+              alignSelf: "flex-end",
             }}
           >
             {optimizing ? "Optimizing…" : `⚡ Rewrite ${needsRewrite.length} Failing Section${needsRewrite.length !== 1 ? "s" : ""}`}
@@ -340,12 +442,12 @@ export default function PositioningPage() {
                     {!wasAccepted && (
                       <button
                         onClick={() => rewriteSection(section)}
-                        disabled={!targetRole.trim() || isLoading}
+                        disabled={!selectedRole || isLoading}
                         style={{
-                          background: targetRole.trim() && !isLoading ? navy : border,
-                          color: targetRole.trim() && !isLoading ? white : muted,
+                          background: selectedRole && !isLoading ? navy : border,
+                          color: selectedRole && !isLoading ? white : muted,
                           border: "none", padding: "8px 16px", fontSize: 12,
-                          cursor: targetRole.trim() && !isLoading ? "pointer" : "default",
+                          cursor: selectedRole && !isLoading ? "pointer" : "default",
                           fontFamily: "inherit", fontWeight: 700, letterSpacing: "0.04em",
                         }}>
                         {isLoading ? "Rewriting…" : "AI Rewrite →"}
@@ -367,7 +469,7 @@ export default function PositioningPage() {
                     {isLoading && (
                       <div style={{ padding: "32px", textAlign: "center", color: muted, fontSize: 13 }}>
                         <div style={{ fontSize: 24, marginBottom: 10 }}>⚡</div>
-                        Claude is rewriting this section for <strong style={{ color: navy }}>{targetRole}</strong>…
+                        Claude is rewriting this section for <strong style={{ color: navy }}>{selectedRole?.title}</strong>…
                       </div>
                     )}
                     {hasRewrite && !isLoading && (
@@ -401,7 +503,7 @@ export default function PositioningPage() {
           <div style={{ marginTop: 24, background: navy, padding: "24px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 16 }}>
             <div>
               <div style={{ color: white, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-                {Object.keys(accepted).length} section{Object.keys(accepted).length > 1 ? "s" : ""} rewritten for <em>{targetRole}</em>
+                {Object.keys(accepted).length} section{Object.keys(accepted).length > 1 ? "s" : ""} rewritten for <em>{selectedRole?.title ?? "selected role"}</em>
               </div>
               <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>Changes saved to Supabase. Copy full text for your resume doc.</div>
             </div>
