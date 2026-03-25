@@ -15,30 +15,54 @@ export const MODEL = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6";
 // ─── SHARED PROMPT BUILDERS ───────────────────────────────────────────────────
 export function buildRewritePrompt(
   section: { title: string; content: string },
-  targetRole: string,
+  roleTitle: string,
+  roleContext: string,
+  roleTraits: string[],
+  roleReasoning: string,
   scoreData: { score: number; issues?: string[] },
   analytics: { calendlyRate: number; avgScrollDepth: number }
 ): string {
-  return `You are an expert resume writer specializing in enterprise tech sales and career pivots.
-Aggressively rewrite the section below to maximize relevance for the target role.
+  return `You are a senior resume writer specializing in enterprise tech sales career positioning.
+Your job is to rewrite one resume section so it reads like it was written specifically
+for this role — not adapted from a generic resume.
 
-TARGET ROLE: ${targetRole}
-SECTION: ${section.title}
+CANDIDATE: Marc Lehrmann
+- 10+ years enterprise tech sales, $25M+ career revenue
+- Background: AVEVA (SCADA/HMI/PI System/IIoT), Transcend Information, Dexxxon Digital Storage, Advantech USA, Radeus Labs
+- Positioning: "OT to AI bridge" — industrial enterprise credibility meets AI/data platform fluency
+- Building 7 apps actively (Next.js, Supabase, Claude API)
+
+TARGET ROLE: ${roleTitle}
+COMPANY/CONTEXT: ${roleContext}
+WHY MARC FITS: ${roleReasoning}
+KEY TRAITS NEEDED: ${roleTraits.join(", ")}
+
+SECTION TO REWRITE: ${section.title}
 CURRENT CONTENT:
 ${section.content}
 
 PERFORMANCE DATA:
-- Current score: ${scoreData.score}/100
-- Known issues: ${scoreData.issues?.join("; ") || "none flagged"}
-- Landing page Calendly conversion: ${analytics.calendlyRate}%
-- Avg scroll depth to this section: ${analytics.avgScrollDepth}%
+- Score: ${scoreData.score}/100
+- Issues: ${scoreData.issues?.join("; ") || "none flagged"}
+- Scroll reach: ${analytics.avgScrollDepth}%
 
-RULES:
-- Preserve all factual claims — do not invent numbers or titles
-- Lead with the most relevant achievement for this role type
-- Use active, specific language — no buzzword filler
-- Keep the same general length as the original
-- Return ONLY the rewritten content. No preamble, no labels, no explanation.`;
+REWRITE RULES:
+1. Every bullet must open with an outcome, not an activity
+2. Reference at least 2 of the key traits naturally in the content
+3. For Experience: max 3 bullets per role, lead with biggest revenue/impact number
+4. For Narrative: write as if speaking directly to a hiring manager at ${roleContext}. Under 180 words.
+5. For Skills: only include skills that map to the key traits list. Cut everything else.
+6. For CTA: name the role title and company specifically.
+7. Confident, direct tone. No hedging. No "I am passionate about" language.
+
+GUARDRAILS — never break these:
+- No invented metrics, companies, or titles
+- Preserve all dates exactly as given
+- Every claim must be traceable to the original content
+- Do not add roles or experiences that don't exist
+
+Return ONLY the rewritten section text.
+No preamble, no labels, no explanation.`;
 }
 
 export function buildScoringPrompt(

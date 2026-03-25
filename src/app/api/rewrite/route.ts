@@ -40,7 +40,15 @@ export async function POST(req: NextRequest) {
 
     const { section, targetRole, analytics, scoreData } = await req.json();
 
-    if (!section?.title || !section?.content || !targetRole?.trim()) {
+    // targetRole can be string OR structured object — handle both for backwards compatibility
+    const roleTitle: string = typeof targetRole === "object" ? targetRole.title : targetRole;
+    const roleContext: string = typeof targetRole === "object"
+      ? `${targetRole.title} at ${targetRole.context}`
+      : targetRole;
+    const roleTraits: string[] = typeof targetRole === "object" ? targetRole.traits : [];
+    const roleReasoning: string = typeof targetRole === "object" ? targetRole.reasoning : "";
+
+    if (!section?.title || !section?.content || !roleTitle?.trim()) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -51,7 +59,7 @@ export async function POST(req: NextRequest) {
       model: MODEL,
       max_tokens: 1200,
       messages: [{ role: "user", content:
-        buildRewritePrompt(section, targetRole, scoreData, analytics)
+        buildRewritePrompt(section, roleTitle, roleContext, roleTraits, roleReasoning, scoreData, analytics)
       }],
     });
 
