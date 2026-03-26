@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anthropic, MODEL } from "@/lib/anthropic";
-import { buildRewritePrompt } from "@/lib/anthropic";
+import { anthropic, MODEL, buildRewritePrompt } from "@/lib/anthropic";
+import { rewriteRatelimit } from "@/lib/upstash";
 
 // GET /api/rewrite — connectivity probe
 export async function GET() {
@@ -22,29 +22,21 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("[rewrite] env check", {
-      anthropic: !!process.env.ANTHROPIC_API_KEY,
-      upstashUrl: !!process.env.UPSTASH_REDIS_REST_URL,
-      upstashToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-
-    // Upstash rate limiter disabled for debugging — re-enable after Claude confirmed working
-    // const ip = req.headers.get("x-forwarded-for") ?? "global";
-    // const { success, limit, remaining } = await rewriteRatelimit.limit(ip);
-    // if (!success) {
-    //   return NextResponse.json(
-    //     { error: `Rate limit reached (${limit} rewrites/min). Try again shortly.` },
-    //     { status: 429, headers: { "X-RateLimit-Remaining": String(remaining) } }
-    //   );
-    // }
+    const ip = req.headers.get("x-forwarded-for") ?? "global";
+    const { success } = await rewriteRatelimit.limit(ip);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Rate limit reached (10 rewrites/min). Try again shortly." },
+        { status: 429 }
+      );
+    }
 
     const { section, targetRole, analytics, scoreData, allSections } = await req.json();
 
-    // targetRole can be string OR structured object — handle both for backwards compatibility
-    const roleTitle: string = typeof targetRole === "object" ? targetRole.title : targetRole;
-    const roleContext: string = typeof targetRole === "object" ? targetRole.context : targetRole;
-    const roleTraits: string[] = typeof targetRole === "object" ? targetRole.traits : [];
-    const roleReasoning: string = typeof targetRole === "object" ? targetRole.reasoning : "";
+    const roleTitle: string = targetRole.title;
+    const roleContext: string = targetRole.context;
+    const roleTraits: string[] = targetRole.traits;
+    const roleReasoning: string = targetRole.reasoning;
 
     if (!section?.title || !section?.content || !roleTitle?.trim()) {
       return NextResponse.json(

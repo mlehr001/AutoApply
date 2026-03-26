@@ -32,14 +32,14 @@ export const track = {
     posthog.capture("job_status_changed", { company, status }),
 
   // Optimizer events
-  roleSelected:    (roleId: string, roleTitle: string) =>
-    posthog.capture("role_selected", { roleId, roleTitle }),
-  rewriteRan:      (section: string, targetRole: string) =>
-    posthog.capture("rewrite_ran", { section, targetRole }),
-  rewriteAccepted: (section: string, targetRole: string) =>
-    posthog.capture("rewrite_accepted", { section, targetRole }),
-  rewriteRejected: (section: string) =>
-    posthog.capture("rewrite_rejected", { section }),
+  roleSelected:    (roleId: string, roleTitle: string, company: string) =>
+    posthog.capture("role_selected", { roleId, roleTitle, company }),
+  rewriteRan:      (sectionId: string, targetRole: string) =>
+    posthog.capture("rewrite_ran", { sectionId, targetRole }),
+  rewriteAccepted: (sectionId: string, targetRole: string) =>
+    posthog.capture("rewrite_accepted", { sectionId, targetRole }),
+  rewriteRejected: (sectionId: string, targetRole: string) =>
+    posthog.capture("rewrite_rejected", { sectionId, targetRole }),
 
   // Dashboard events
   dashboardViewed: () =>

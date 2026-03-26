@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, MODEL } from "@/lib/anthropic";
-import { getCachedScores, setCachedScores, buildScoreCacheKey } from "@/lib/upstash";
+import { getCachedScores, setCachedScores, buildScoreCacheKey, scoringRatelimit } from "@/lib/upstash";
 import { MARC_RESUME } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
-    // Upstash rate limiter disabled for debugging — re-enable after Claude confirmed working
-    // const ip = req.headers.get("x-forwarded-for") ?? "global";
-    // const { success } = await scoringRatelimit.limit(ip);
-    // if (!success) {
-    //   return NextResponse.json({ error: "Rate limit: max 3 scoring runs per hour." }, { status: 429 });
-    // }
+    const ip = req.headers.get("x-forwarded-for") ?? "global";
+    const { success } = await scoringRatelimit.limit(ip);
+    if (!success) {
+      return NextResponse.json({ error: "Rate limit: max 3 scoring runs per hour." }, { status: 429 });
+    }
 
     const { jobs = [], keywords = "", starred = [], appliedJobs = [] } = await req.json();
 

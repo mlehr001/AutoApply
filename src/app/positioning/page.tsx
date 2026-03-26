@@ -168,7 +168,6 @@ export default function PositioningPage() {
   const [expanded,    setExpanded]    = useState<Record<string, boolean>>({});
   const [accepted,    setAccepted]    = useState<Record<string, boolean>>({});
   const [optimizing,  setOptimizing]  = useState(false);
-  const [ran,         setRan]         = useState(false);
   const [dbLoading,   setDbLoading]   = useState(true);
   const [compareOpen,     setCompareOpen]     = useState<Record<string, boolean>>({});
   const [compareRoleId,   setCompareRoleId]   = useState<Record<string, string>>({});
@@ -223,7 +222,7 @@ export default function PositioningPage() {
     if (!selectedRole) return;
     setLoading(l => ({ ...l, [section.id]: true }));
     setRewriteErrors(e => { const n = { ...e }; delete n[section.id]; return n; });
-    track.rewriteRan(section.title, selectedRole.title);
+    track.rewriteRan(section.id, selectedRole.title);
     try {
       const res = await fetch("/api/rewrite", {
         method: "POST",
@@ -254,7 +253,6 @@ export default function PositioningPage() {
   async function rewriteAll() {
     if (!selectedRole) return;
     setOptimizing(true);
-    setRan(true);
     for (const s of needsRewrite) await rewriteSection(s);
     setOptimizing(false);
   }
@@ -300,13 +298,13 @@ export default function PositioningPage() {
   }
 
   function rejectRewrite(sectionId: string) {
-    track.rewriteRejected(sectionId);
+    track.rewriteRejected(sectionId, selectedRole?.title ?? "");
     setRewrites(rw => { const n = { ...rw }; delete n[sectionId]; return n; });
     setExpanded(e => ({ ...e, [sectionId]: false }));
   }
 
   function selectRecommendation(rec: RoleRecommendation) {
-    track.roleSelected(rec.id, rec.title);
+    track.roleSelected(rec.id, rec.title, rec.company);
     setSelectedRole({ id: rec.id, title: rec.title, company: rec.company, context: rec.context, reasoning: rec.reasoning, traits: rec.traits });
   }
 

@@ -82,10 +82,7 @@ ${resumeText}
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("analyze-roles: request received");
-
     const { resume } = await req.json();
-    console.log("analyze-roles: parsed resume", !!resume);
 
     if (!resume) {
       return NextResponse.json(
@@ -95,36 +92,24 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = buildAnalyzeRolesPrompt(resume);
-    console.log("analyze-roles: prompt built");
 
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 2000,
       temperature: 0.3,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      messages: [{ role: "user", content: prompt }],
     });
-
-    console.log("analyze-roles: anthropic responded");
 
     const text =
       response.content?.[0]?.type === "text"
         ? response.content[0].text
         : "";
 
-    console.log("analyze-roles: raw text", text);
-
     let parsed: RoleRecommendation[] = [];
 
- try {
-  parsed = extractJsonArray(text);
-      console.log("analyze-roles: parsed recommendations", parsed.length);
-    } catch (err) {
-      console.error("Failed to parse roles:", text);
+    try {
+      parsed = extractJsonArray(text);
+    } catch {
       return NextResponse.json(
         { error: "Invalid AI response format", raw: text },
         { status: 500 }
@@ -136,7 +121,7 @@ export async function POST(req: NextRequest) {
       recommendations: parsed,
     });
   } catch (error) {
-    console.error("Analyze roles error:", error);
+    console.error("[api/analyze_roles]", error);
     return NextResponse.json(
       { error: "Failed to analyze roles" },
       { status: 500 }
