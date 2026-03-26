@@ -38,13 +38,11 @@ export async function POST(req: NextRequest) {
     //   );
     // }
 
-    const { section, targetRole, analytics, scoreData } = await req.json();
+    const { section, targetRole, analytics, scoreData, allSections } = await req.json();
 
     // targetRole can be string OR structured object — handle both for backwards compatibility
     const roleTitle: string = typeof targetRole === "object" ? targetRole.title : targetRole;
-    const roleContext: string = typeof targetRole === "object"
-      ? `${targetRole.title} at ${targetRole.context}`
-      : targetRole;
+    const roleContext: string = typeof targetRole === "object" ? targetRole.context : targetRole;
     const roleTraits: string[] = typeof targetRole === "object" ? targetRole.traits : [];
     const roleReasoning: string = typeof targetRole === "object" ? targetRole.reasoning : "";
 
@@ -57,9 +55,9 @@ export async function POST(req: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 1200,
+      max_tokens: 2500,
       messages: [{ role: "user", content:
-        buildRewritePrompt(section, roleTitle, roleContext, roleTraits, roleReasoning, scoreData, analytics)
+        buildRewritePrompt(section, roleTitle, roleContext, roleTraits, roleReasoning, scoreData, analytics, allSections ?? [])
       }],
     });
 
@@ -80,6 +78,15 @@ export async function POST(req: NextRequest) {
         { error: "Claude returned an empty response", debug: { stopReason: message.stop_reason, contentBlocks: message.content.length } },
         { status: 502 }
       );
+    }
+
+    if (message.stop_reason === "max_tokens") {
+      console.warn("[api/rewrite] response truncated at max_tokens", { usage: message.usage });
+      return NextResponse.json({
+        text: textResponse,
+        truncated: true,
+        warning: "Rewrite may be incomplete — response was cut off at the token limit.",
+      });
     }
 
     return NextResponse.json({ text: textResponse });

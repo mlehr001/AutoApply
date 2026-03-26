@@ -133,6 +133,25 @@ const DiffView = ({ original, rewritten }: { original: string; rewritten: string
   </div>
 );
 
+const CompareView = ({ original, rewriteA, labelA, rewriteB, labelB }: {
+  original: string; rewriteA: string; labelA: string; rewriteB: string; labelB: string;
+}) => (
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", border: `1px solid ${border}`, fontSize: 12, lineHeight: 1.7 }}>
+    <div style={{ padding: "16px 20px", background: offWhite, borderRight: `1px solid ${border}` }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: muted, marginBottom: 12 }}>Original</div>
+      <div style={{ color: "#666", whiteSpace: "pre-wrap" }}>{original}</div>
+    </div>
+    <div style={{ padding: "16px 20px", background: navy + "06", borderRight: `1px solid ${border}` }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: navy, marginBottom: 12 }}>{labelA}</div>
+      <div style={{ color: "#2D2D2D", whiteSpace: "pre-wrap" }}>{rewriteA}</div>
+    </div>
+    <div style={{ padding: "16px 20px", background: "#F0FFF4" }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: green, marginBottom: 12 }}>{labelB}</div>
+      <div style={{ color: "#2D2D2D", whiteSpace: "pre-wrap" }}>{rewriteB}</div>
+    </div>
+  </div>
+);
+
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function PositioningPage() {
   const analyzedRef = useRef(false);
@@ -140,18 +159,26 @@ export default function PositioningPage() {
   const [roleRecommendations, setRoleRecommendations] = useState<RoleRecommendation[]>([]);
   const [selectedRole,        setSelectedRole]        = useState<RewriteTargetRole | null>(null);
   const [isAnalyzingRoles,    setIsAnalyzingRoles]    = useState(false);
+  const [roleAnalysisError,   setRoleAnalysisError]   = useState<string | null>(null);
   const [resume,      setResume]      = useState<{ sections: ResumeSection[]; id?: string }>({ sections: BASE_SECTIONS });
   const [analytics]                   = useState(SAMPLE_ANALYTICS);
   const [rewrites,    setRewrites]    = useState<Record<string, string>>({});
+  const [rewriteErrors, setRewriteErrors] = useState<Record<string, string>>({});
   const [loading,     setLoading]     = useState<Record<string, boolean>>({});
   const [expanded,    setExpanded]    = useState<Record<string, boolean>>({});
   const [accepted,    setAccepted]    = useState<Record<string, boolean>>({});
   const [optimizing,  setOptimizing]  = useState(false);
   const [ran,         setRan]         = useState(false);
   const [dbLoading,   setDbLoading]   = useState(true);
+  const [compareOpen,     setCompareOpen]     = useState<Record<string, boolean>>({});
+  const [compareRoleId,   setCompareRoleId]   = useState<Record<string, string>>({});
+  const [compareRewrites, setCompareRewrites] = useState<Record<string, string>>({});
+  const [compareLoading,  setCompareLoading]  = useState<Record<string, boolean>>({});
+  const [compareErrors,   setCompareErrors]   = useState<Record<string, string>>({});
 
   async function analyzeRoles(sections: ResumeSection[]) {
     setIsAnalyzingRoles(true);
+    setRoleAnalysisError(null);
     try {
       const res = await fetch("/api/analyze_roles", {
         method: "POST",
@@ -166,8 +193,8 @@ export default function PositioningPage() {
         const first = recs[0];
         setSelectedRole({ id: first.id, title: first.title, company: first.company, context: first.context, reasoning: first.reasoning, traits: first.traits });
       }
-    } catch {
-      // non-blocking
+    } catch (err) {
+      setRoleAnalysisError(err instanceof Error ? err.message : "Role analysis failed. Please try again.");
     } finally {
       setIsAnalyzingRoles(false);
     }
@@ -195,12 +222,13 @@ export default function PositioningPage() {
   async function rewriteSection(section: ResumeSection & { scoreData: SectionScore }) {
     if (!selectedRole) return;
     setLoading(l => ({ ...l, [section.id]: true }));
+    setRewriteErrors(e => { const n = { ...e }; delete n[section.id]; return n; });
     track.rewriteRan(section.title, selectedRole.title);
     try {
       const res = await fetch("/api/rewrite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section, targetRole: selectedRole, analytics, scoreData: section.scoreData }),
+        body: JSON.stringify({ section, targetRole: selectedRole, analytics, scoreData: section.scoreData, allSections: resume.sections }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -210,10 +238,15 @@ export default function PositioningPage() {
       if (!text) {
         throw new Error("Claude returned an empty rewrite. Try again.");
       }
+      if (data.truncated) {
+        setRewriteErrors(e => ({ ...e, [section.id]: `Warning: ${data.warning} The partial rewrite is shown below.` }));
+        setExpanded(e => ({ ...e, [section.id]: true }));
+      }
       setRewrites(r => ({ ...r, [section.id]: text }));
       setExpanded(e => ({ ...e, [section.id]: true }));
     } catch (err) {
-      setRewrites(r => ({ ...r, [section.id]: `Error: ${err instanceof Error ? err.message : String(err)}` }));
+      setRewriteErrors(e => ({ ...e, [section.id]: err instanceof Error ? err.message : "Rewrite failed. Try again." }));
+      setExpanded(e => ({ ...e, [section.id]: true }));
     }
     setLoading(l => ({ ...l, [section.id]: false }));
   }
@@ -226,10 +259,31 @@ export default function PositioningPage() {
     setOptimizing(false);
   }
 
+  async function runComparison(section: ResumeSection & { scoreData: SectionScore }, compRole: RewriteTargetRole) {
+    setCompareLoading(l => ({ ...l, [section.id]: true }));
+    setCompareErrors(e => { const n = { ...e }; delete n[section.id]; return n; });
+    setCompareRoleId(r => ({ ...r, [section.id]: compRole.id ?? compRole.title }));
+    try {
+      const res = await fetch("/api/rewrite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section, targetRole: compRole, analytics, scoreData: section.scoreData, allSections: resume.sections }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `API error ${res.status}`);
+      const text = data.text ?? data.rewrite ?? "";
+      if (!text) throw new Error("Claude returned an empty rewrite.");
+      setCompareRewrites(r => ({ ...r, [section.id]: text }));
+    } catch (err) {
+      setCompareErrors(e => ({ ...e, [section.id]: err instanceof Error ? err.message : "Comparison failed." }));
+    }
+    setCompareLoading(l => ({ ...l, [section.id]: false }));
+  }
+
   async function acceptRewrite(sectionId: string) {
     const newContent = rewrites[sectionId];
     if (!newContent) return;
-    track.rewriteAccepted(sectionId);
+    track.rewriteAccepted(sectionId, selectedRole?.title ?? "");
     const newSections = resume.sections.map(s => s.id === sectionId ? { ...s, content: newContent } : s);
     setResume(r => ({ ...r, sections: newSections }));
     setAccepted(a => ({ ...a, [sectionId]: true }));
@@ -252,6 +306,7 @@ export default function PositioningPage() {
   }
 
   function selectRecommendation(rec: RoleRecommendation) {
+    track.roleSelected(rec.id, rec.title);
     setSelectedRole({ id: rec.id, title: rec.title, company: rec.company, context: rec.context, reasoning: rec.reasoning, traits: rec.traits });
   }
 
@@ -303,6 +358,15 @@ export default function PositioningPage() {
             <div style={{ padding: "32px", textAlign: "center", color: muted, fontSize: 13 }}>
               <div style={{ fontSize: 22, marginBottom: 10 }}>⚡</div>
               AI is analyzing your resume to find the best-fit roles…
+            </div>
+          ) : roleAnalysisError ? (
+            <div style={{ padding: "20px 0", display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ fontSize: 13, color: red }}>{roleAnalysisError}</div>
+              <button
+                onClick={() => analyzeRoles(resume.sections)}
+                style={{ background: offWhite, border: `1px solid ${border}`, color: navy, padding: "7px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
+                ↺ Retry
+              </button>
             </div>
           ) : roleRecommendations.length === 0 ? (
             <div style={{ fontSize: 13, color: muted }}>No recommendations yet.</div>
@@ -402,10 +466,11 @@ export default function PositioningPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {scores.map(section => {
             const { scoreData } = section;
-            const isExpanded  = expanded[section.id];
-            const hasRewrite  = !!rewrites[section.id];
-            const isLoading   = loading[section.id];
-            const wasAccepted = accepted[section.id];
+            const isExpanded   = expanded[section.id];
+            const hasRewrite   = !!rewrites[section.id];
+            const isLoading    = loading[section.id];
+            const wasAccepted  = accepted[section.id];
+            const rewriteError = rewriteErrors[section.id];
 
             return (
               <div key={section.id} style={{ background: white, border: `1px solid ${scoreData.grade === "D" ? red + "40" : scoreData.grade === "C" ? amber + "40" : border}` }}>
@@ -439,6 +504,13 @@ export default function PositioningPage() {
                       style={{ background: offWhite, border: `1px solid ${border}`, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: navy, fontFamily: "inherit" }}>
                       {isExpanded ? "Collapse" : "View Content"}
                     </button>
+                    {!wasAccepted && hasRewrite && roleRecommendations.length >= 2 && (
+                      <button
+                        onClick={() => setCompareOpen(c => ({ ...c, [section.id]: !c[section.id] }))}
+                        style={{ background: offWhite, border: `1px solid ${border}`, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: navy, fontFamily: "inherit" }}>
+                        {compareOpen[section.id] ? "Close Compare" : "Compare Roles →"}
+                      </button>
+                    )}
                     {!wasAccepted && (
                       <button
                         onClick={() => rewriteSection(section)}
@@ -458,7 +530,7 @@ export default function PositioningPage() {
 
                 {isExpanded && (
                   <div style={{ padding: "20px 24px" }}>
-                    {!hasRewrite && !isLoading && (
+                    {!hasRewrite && !isLoading && !rewriteError && (
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: muted, marginBottom: 10 }}>Current Content</div>
                         <div style={{ fontSize: 12, lineHeight: 1.75, color: navy, whiteSpace: "pre-wrap", background: offWhite, padding: "16px 18px", border: `1px solid ${border}` }}>
@@ -470,6 +542,29 @@ export default function PositioningPage() {
                       <div style={{ padding: "32px", textAlign: "center", color: muted, fontSize: 13 }}>
                         <div style={{ fontSize: 24, marginBottom: 10 }}>⚡</div>
                         Claude is rewriting this section for <strong style={{ color: navy }}>{selectedRole?.title}</strong>…
+                      </div>
+                    )}
+                    {rewriteError && !isLoading && (
+                      <div style={{ marginBottom: hasRewrite ? 0 : 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: amber + "10", border: `1px solid ${amber}40`, marginBottom: hasRewrite ? 16 : 0 }}>
+                          <div style={{ fontSize: 12, color: navy, flex: 1 }}>⚠ {rewriteError}</div>
+                          {!hasRewrite && (
+                            <button
+                              onClick={() => rewriteSection(section)}
+                              disabled={!selectedRole}
+                              style={{ background: offWhite, border: `1px solid ${border}`, color: navy, padding: "7px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" as const }}>
+                              ↺ Retry
+                            </button>
+                          )}
+                        </div>
+                        {!hasRewrite && (
+                          <div style={{ marginTop: 14 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: muted, marginBottom: 10 }}>Current Content</div>
+                            <div style={{ fontSize: 12, lineHeight: 1.75, color: navy, whiteSpace: "pre-wrap", background: offWhite, padding: "16px 18px", border: `1px solid ${border}` }}>
+                              {section.content}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     {hasRewrite && !isLoading && (
@@ -489,6 +584,53 @@ export default function PositioningPage() {
                             ✕ Reject
                           </button>
                         </div>
+                        {compareOpen[section.id] && (
+                          <div style={{ marginTop: 24, borderTop: `1px solid ${border}`, paddingTop: 20 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: muted, marginBottom: 12 }}>
+                              Compare against another target role
+                            </div>
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 16 }}>
+                              {roleRecommendations
+                                .filter(r => r.id !== selectedRole?.id)
+                                .map(rec => {
+                                  const isChosen = compareRoleId[section.id] === rec.id;
+                                  return (
+                                    <button
+                                      key={rec.id}
+                                      onClick={() => runComparison(section, { id: rec.id, title: rec.title, company: rec.company, context: rec.context, reasoning: rec.reasoning, traits: rec.traits })}
+                                      disabled={compareLoading[section.id]}
+                                      style={{
+                                        padding: "6px 14px", fontSize: 12, cursor: compareLoading[section.id] ? "default" : "pointer",
+                                        fontFamily: "inherit", background: isChosen ? navy : offWhite,
+                                        color: isChosen ? white : navy, border: `1px solid ${isChosen ? navy : border}`,
+                                        fontWeight: isChosen ? 700 : 400,
+                                      }}>
+                                      {rec.title}
+                                    </button>
+                                  );
+                                })}
+                            </div>
+                            {compareLoading[section.id] && (
+                              <div style={{ padding: "20px", textAlign: "center", color: muted, fontSize: 13 }}>
+                                Generating comparison rewrite…
+                              </div>
+                            )}
+                            {compareErrors[section.id] && !compareLoading[section.id] && (
+                              <div style={{ fontSize: 12, color: red, padding: "10px 14px", background: red + "08", border: `1px solid ${red}30` }}>
+                                ⚠ {compareErrors[section.id]}
+                              </div>
+                            )}
+                            {compareRewrites[section.id] && !compareLoading[section.id] && (
+                              <CompareView
+                                original={section.content}
+                                rewriteA={rewrites[section.id]}
+                                labelA={selectedRole?.title ?? "Role A"}
+                                rewriteB={compareRewrites[section.id]}
+                                labelB={roleRecommendations.find(r => r.id === compareRoleId[section.id])?.title ?? "Role B"}
+                              />
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
