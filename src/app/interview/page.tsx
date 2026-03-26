@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { COLORS } from "@/lib/constants";
+import { track } from "@/lib/posthog";
+import ScheduleInterviewModal from "@/components/ScheduleInterviewModal";
 
 const { navy, navyDark, offWhite, white, border, muted, green, amber } = COLORS;
 
@@ -20,22 +22,25 @@ interface Interview {
 type TabType = "upcoming" | "active" | "past";
 
 export default function InterviewPage() {
-  const [tab,        setTab]        = useState<TabType>("upcoming");
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [expanded,   setExpanded]   = useState<string | null>(null);
-  const [prepLoading, setPrepLoading] = useState<string | null>(null);
+  const [tab,             setTab]             = useState<TabType>("upcoming");
+  const [interviews,      setInterviews]      = useState<Interview[]>([]);
+  const [loading,         setLoading]         = useState(true);
+  const [expanded,        setExpanded]        = useState<string | null>(null);
+  const [prepLoading,     setPrepLoading]     = useState<string | null>(null);
+  const [showSchedule,    setShowSchedule]    = useState(false);
 
-  useEffect(() => {
-    supabase.from("interviews").select("*").order("scheduled_at")
-      .then(({ data }) => {
-        setInterviews(data || []);
-        setLoading(false);
-      });
-  }, []);
+  async function loadInterviews() {
+    setLoading(true);
+    const { data } = await supabase.from("interviews").select("*").order("scheduled_at");
+    setInterviews(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { loadInterviews(); }, []);
 
   async function generatePrepBrief(interview: Interview) {
     setPrepLoading(interview.id);
+    track.prepBriefGenerated(interview.company, interview.job_title);
     try {
       const res = await fetch("/api/interview-prep", {
         method: "POST",
@@ -44,6 +49,7 @@ export default function InterviewPage() {
           jobTitle:      interview.job_title,
           company:       interview.company,
           interviewType: interview.interview_type,
+          notes:         interview.notes || "",
         }),
       });
       const data = await res.json();
@@ -53,6 +59,12 @@ export default function InterviewPage() {
       }
     } catch { /* show error state */ }
     setPrepLoading(null);
+  }
+
+  function updateStatus(id: string, newStatus: TabType) {
+    supabase.from("interviews").update({ status: newStatus }).eq("id", id).then(() => {
+      setInterviews(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
+    });
   }
 
   const filtered = interviews.filter(i => i.status === tab);
@@ -66,8 +78,12 @@ export default function InterviewPage() {
     <div style={{ minHeight: "100vh", background: offWhite, fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontSize: 14, color: navy }}>
 
       {/* PAGE HEADER */}
-      <div style={{ background: navyDark, padding: "0 32px", height: 56, display: "flex", alignItems: "center", borderBottom: "2px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ background: navyDark, padding: "0 32px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "2px solid rgba(255,255,255,0.08)" }}>
         <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontWeight: 800, fontSize: 15, color: white, letterSpacing: "-0.01em" }}>Interview Prep</div>
+        <button onClick={() => setShowSchedule(true)}
+          style={{ padding: "8px 16px", background: green, border: "none", color: white, fontFamily: "var(--font-raleway), sans-serif", fontWeight: 700, fontSize: 12, cursor: "pointer", letterSpacing: "0.04em" }}>
+          + Schedule New
+        </button>
       </div>
 
       {/* TABS */}
@@ -161,6 +177,33 @@ export default function InterviewPage() {
                           No prep brief yet. Click &quot;⚡ Prep Brief&quot; to generate one with Claude.
                         </div>
                       )}
+                      {/* Status transitions */}
+                      <div style={{ display: "flex", gap: 8, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${border}` }}>
+                        {tab === "upcoming" && (
+                          <button onClick={() => updateStatus(interview.id, "active")}
+                            style={{ padding: "7px 14px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", background: navy, color: white, border: "none", cursor: "pointer" }}>
+                            Mark Active
+                          </button>
+                        )}
+                        {tab === "active" && (
+                          <>
+                            <button onClick={() => updateStatus(interview.id, "past")}
+                              style={{ padding: "7px 14px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", background: green, color: white, border: "none", cursor: "pointer" }}>
+                              Mark Complete
+                            </button>
+                            <button onClick={() => updateStatus(interview.id, "upcoming")}
+                              style={{ padding: "7px 14px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", background: white, color: muted, border: `1px solid ${border}`, cursor: "pointer" }}>
+                              Back to Upcoming
+                            </button>
+                          </>
+                        )}
+                        {tab === "past" && (
+                          <button onClick={() => updateStatus(interview.id, "active")}
+                            style={{ padding: "7px 14px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", background: white, color: muted, border: `1px solid ${border}`, cursor: "pointer" }}>
+                            Reactivate
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -169,6 +212,13 @@ export default function InterviewPage() {
           </div>
         )}
       </div>
+
+      <ScheduleInterviewModal
+        isOpen={showSchedule}
+        onClose={() => setShowSchedule(false)}
+        onScheduled={loadInterviews}
+        job={null}
+      />
     </div>
   );
 }

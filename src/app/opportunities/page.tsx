@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { getJobs, upsertJobs, updateJobStatus } from "@/lib/supabase";
 import { track } from "@/lib/posthog";
 import type { Job, JobScoreResult } from "@/types";
+import { FileText, Briefcase, Calendar } from "lucide-react";
+import CoverLetterModal from "@/components/CoverLetterModal";
+import RoleBriefPanel from "@/components/RoleBriefPanel";
+import ScheduleInterviewModal from "@/components/ScheduleInterviewModal";
 
 const navy = "#2C3E50", navyL = "#34495E", offWhite = "#F5F5F3",
   white = "#FFFFFF", border = "#E5E2DD", muted = "#888",
@@ -74,6 +78,9 @@ export default function OpportunitiesPage() {
   const [filter,       setFilter]       = useState("All");
   const [savedJobs,    setSavedJobs]    = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState("All");
+  const [coverLetterJob, setCoverLetterJob] = useState<ScoredJob | null>(null);
+  const [roleBriefJob,   setRoleBriefJob]   = useState<ScoredJob | null>(null);
+  const [scheduleJob,    setScheduleJob]    = useState<ScoredJob | null>(null);
 
   // Load saved/applied jobs from Supabase to pre-populate applied history
   useEffect(() => {
@@ -364,6 +371,21 @@ export default function OpportunitiesPage() {
                             </span>
                           </div>
                         </div>
+                        {/* AI Tools Row */}
+                        <div style={{ gridColumn: "1 / -1", paddingTop: 16, borderTop: `1px solid ${border}`, display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                          <button onClick={() => setCoverLetterJob(job)}
+                            style={{ padding: "7px 14px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", border: `1px solid ${navy}`, background: white, color: navy, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                            <FileText size={13} /> Cover Letter
+                          </button>
+                          <button onClick={() => setRoleBriefJob(job)}
+                            style={{ padding: "7px 14px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", border: `1px solid ${blue}`, background: white, color: blue, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                            <Briefcase size={13} /> Role Brief
+                          </button>
+                          <button onClick={() => setScheduleJob(job)}
+                            style={{ padding: "7px 14px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", border: "none", background: green, color: white, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                            <Calendar size={13} /> Schedule Interview
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -380,6 +402,23 @@ export default function OpportunitiesPage() {
           </div>
         )}
       </div>
+
+      <CoverLetterModal
+        isOpen={!!coverLetterJob}
+        onClose={() => setCoverLetterJob(null)}
+        job={coverLetterJob}
+      />
+      <RoleBriefPanel
+        isOpen={!!roleBriefJob}
+        onClose={() => setRoleBriefJob(null)}
+        job={roleBriefJob}
+      />
+      <ScheduleInterviewModal
+        isOpen={!!scheduleJob}
+        onClose={() => setScheduleJob(null)}
+        onScheduled={() => setScheduleJob(null)}
+        job={scheduleJob}
+      />
     </div>
   );
 }
